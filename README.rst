@@ -50,11 +50,11 @@ In your ``settings.py`` file, you'll need set variables::
 
 Set your session backend to::
 
-    SESSION_ENGINE = 'dynamodb_sessions.backends.cached_dynamodb'
+    SESSION_ENGINE = 'dynamodb2_sessions.backends.cached_dynamodb'
 
 or::
 
-    SESSION_ENGINE = 'dynamodb_sessions.backends.dynamodb'
+    SESSION_ENGINE = 'dynamodb2_sessions.backends.dynamodb'
     
 Optional you can set always consistent parametr.
 If you are not using cache to this sessions backend you can force all reads from Dynamodb by setting True.
