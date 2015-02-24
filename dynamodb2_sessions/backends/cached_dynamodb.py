@@ -8,6 +8,7 @@ from django.core.cache import cache
 
 KEY_PREFIX = "dynamodb_sessions.backends.cached_dynamodb"
 
+
 class SessionStore(DynamoDBStore):
     """
     Implements cached, database backed sessions.
