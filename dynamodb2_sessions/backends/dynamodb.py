@@ -1,11 +1,11 @@
-from boto.dynamodb.exceptions import DynamoDBKeyNotFoundError, DynamoDBItemError
+
 from boto.dynamodb2 import connect_to_region
-from boto.dynamodb2.layer1 import DynamoDBConnection
 from boto.dynamodb2.table import Table
-from boto.regioninfo import RegionInfo
+from boto.dynamodb.exceptions import DynamoDBItemError
+from boto.dynamodb2.exceptions import ItemNotFound
+
 from django.conf import settings
 from django.contrib.sessions.backends.base import SessionBase, CreateError
-from django.core.exceptions import SuspiciousOperation, ObjectDoesNotExist
 from django.utils import timezone
 import logging
 import time
@@ -58,23 +58,20 @@ class SessionStore(SessionBase):
         :rtype: dict
         :returns: The de-coded session data, as a dict.
         """
-        item = self.table.get_item(
-            session_key=self.session_key,
-            consistent=getattr(settings, 'DYNAMODB_SESSIONS_ALWAYS_CONSISTENT', False)
-        )
         try:
-            if not item.items():
-                logger.info("No items with this session key, creating new")
-                raise DynamoDBItemError("No items with this session key")
+            item = self.table.get_item(
+                session_key=self.session_key,
+                consistent=getattr(settings, 'DYNAMODB_SESSIONS_ALWAYS_CONSISTENT', False)
+            )
             if not item['expire_date'] > int(time.mktime(timezone.now().timetuple())):
                 logger.info("Session expired, creating new")
                 raise DynamoDBItemError("Session expired")
-            else:
-                logger.info("Item got successfully")
-                return self.decode(item['data'])
-        except (SuspiciousOperation, DynamoDBItemError) as e:
+
+        except (ItemNotFound, DynamoDBItemError):
             self.create()
             return {}
+
+        return self.decode(item['data'])
 
     def exists(self, session_key):
         """
@@ -84,12 +81,12 @@ class SessionStore(SessionBase):
         :returns: ``True`` if a session with the given key exists in the DB,
             ``False`` if not.
         """
-        if self.table.get_item(session_key=session_key, consistent=getattr(settings, 'DYNAMODB_SESSIONS_ALWAYS_CONSISTENT', False)).items():
-            logger.info("Item exists")
-            return True
-        else:
-            logger.info("Item doesn't exist")
-            return False
+        is_key_exists = self.table.has_item(
+            session_key=session_key,
+            consistent=getattr(settings, 'DYNAMODB_SESSIONS_ALWAYS_CONSISTENT', False)
+        )
+
+        return is_key_exists
 
     def create(self):
         """
@@ -129,13 +126,13 @@ class SessionStore(SessionBase):
             except CreateError:
                 logger.error("Item creation failed")
         else:
-            item = self.table.get_item(session_key=self._session_key,
-                                       consistent=getattr(settings, 'DYNAMODB_SESSIONS_ALWAYS_CONSISTENT', False))
-            if not item.items():
+            if self.exists(self._session_key):
+                item = self.table.get_item(session_key=self._session_key,
+                                           consistent=getattr(settings, 'DYNAMODB_SESSIONS_ALWAYS_CONSISTENT', False))
+                item['data'] = data['data']
+                item.partial_save()
+            else:
                 self.table.put_item(data=data)
-                return
-            item['data'] = data['data']
-            item.save()
 
     def delete(self, session_key=None):
         """
@@ -149,9 +146,10 @@ class SessionStore(SessionBase):
             if self.session_key is None:
                 return
             session_key = self.session_key
-        item = self.table.get_item(session_key=session_key,
-                                   consistent=getattr(settings, 'DYNAMODB_SESSIONS_ALWAYS_CONSISTENT', False))
-        if item.items():
+
+        if self.exists(session_key):
+            item = self.table.get_item(session_key=session_key,
+                                       consistent=getattr(settings, 'DYNAMODB_SESSIONS_ALWAYS_CONSISTENT', False))
             item.delete()
             logger.info("Item deleted successfully")
 
