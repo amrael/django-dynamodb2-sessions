@@ -17,7 +17,7 @@ setup(
     license='BSD License',
     url='https://github.com/Solution4Future/django-dynamodb2-sessions',
     platforms=["any"],
-    install_requires=['django', "boto>=2.10.0"],
+    install_requires=['django', "boto>=2.36.0"],
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
