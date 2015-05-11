@@ -2,7 +2,7 @@
 from boto.dynamodb2 import connect_to_region
 from boto.dynamodb2.table import Table
 from boto.dynamodb.exceptions import DynamoDBItemError
-from boto.dynamodb2.exceptions import ItemNotFound
+from boto.dynamodb2.exceptions import ItemNotFound, ValidationException
 
 from django.conf import settings
 from django.contrib.sessions.backends.base import SessionBase, CreateError
@@ -67,7 +67,7 @@ class SessionStore(SessionBase):
                 logger.info("Session expired, creating new")
                 raise DynamoDBItemError("Session expired")
 
-        except (ItemNotFound, DynamoDBItemError):
+        except (ItemNotFound, DynamoDBItemError, ValidationException):
             self.create()
             return {}
 
