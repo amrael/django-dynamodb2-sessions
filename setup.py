@@ -1,8 +1,6 @@
 from setuptools import setup, find_packages
 import dynamodb2_sessions
 
-long_description = open('README.rst', encoding='utf-8').read()
-
 major_ver, minor_ver = dynamodb2_sessions.__version__
 version_str = '%d.%d' % (major_ver, minor_ver)
 
@@ -11,7 +9,6 @@ setup(
     version=version_str,
     packages=find_packages(),
     description="Sessions backend dedicated for Django uses Amazon DynamoDB v.2",
-    long_description=long_description,
     author='Justyna Zarna',
     author_email='justyna.zarna@solution4future.com',
     license='BSD License',
