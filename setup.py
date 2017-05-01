@@ -1,7 +1,7 @@
 from setuptools import setup, find_packages
 import dynamodb2_sessions
 
-long_description = open('README.rst').read()
+long_description = open('README.rst', encoding='utf-8').read()
 
 major_ver, minor_ver = dynamodb2_sessions.__version__
 version_str = '%d.%d' % (major_ver, minor_ver)
